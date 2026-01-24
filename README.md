@@ -625,7 +625,7 @@ WEBHOOK_TOKEN_2=your-leads-webhook-token
 **Зачем:** Для AI-категоризации транзакций через embeddings
 
 **Как получить:**
-1. Откройте https://platform.openai.com/
+1. Откройте https://platform.openai.com/ (*требует VPN*).  
 2. Зарегистрируйтесь или войдите
 3. Перейдите в **API Keys**
 4. Нажмите **Create new secret key**
