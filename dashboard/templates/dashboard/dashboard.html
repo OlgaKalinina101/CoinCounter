@@ -1,0 +1,650 @@
+{% load static dashboard_filters %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовый дашборд {{ year }}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js для графиков -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <!-- Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+        .card-shadow:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: translateY(-2px);
+        }
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+        .stat-card.green::before {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        .stat-card.blue::before {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        }
+        .stat-card.purple::before {
+            background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+        }
+        .stat-card.orange::before {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+        .stat-card.red::before {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+        .trend-up {
+            color: #10b981;
+        }
+        .trend-down {
+            color: #ef4444;
+        }
+        .table-modern {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table-modern th {
+            background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+        }
+        .table-modern tbody tr {
+            transition: all 0.2s ease;
+        }
+        .table-modern tbody tr:hover {
+            background-color: #f9fafb;
+            transform: scale(1.01);
+        }
+        .positive-value {
+            color: #10b981;
+            font-weight: 600;
+        }
+        .negative-value {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        .icon-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .radio-custom {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .radio-custom:checked {
+            border-color: #667eea;
+            background-color: #667eea;
+        }
+        .radio-custom:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: white;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header с градиентом -->
+    <div class="gradient-bg text-white py-8 mb-8">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between flex-wrap">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2">
+                        <i class="fas fa-chart-line mr-3"></i>Финансовый дашборд
+                    </h1>
+                    <p class="text-purple-100 text-lg">Полная картина вашего бизнеса за {{ year }} год</p>
+                </div>
+                
+                <!-- Форма выбора года -->
+                <form action="{% url 'dashboard' %}" method="get" class="no-print mt-4 md:mt-0">
+                    <div class="flex items-center space-x-3 bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-3">
+                        <label class="flex items-center cursor-pointer group">
+                            <input type="radio" name="year" value="2024" {% if year == 2024 %}checked{% endif %} 
+                                   class="radio-custom mr-2 group-hover:border-white">
+                            <span class="text-white font-medium">2024</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer group">
+                            <input type="radio" name="year" value="2025" {% if year == 2025 %}checked{% endif %} 
+                                   class="radio-custom mr-2 group-hover:border-white">
+                            <span class="text-white font-medium">2025</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer group">
+                            <input type="radio" name="year" value="2026" {% if year == 2026 %}checked{% endif %} 
+                                   class="radio-custom mr-2 group-hover:border-white">
+                            <span class="text-white font-medium">2026</span>
+                        </label>
+                        <button type="submit" 
+                                class="bg-white text-purple-600 px-6 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-all transform hover:scale-105">
+                            <i class="fas fa-sync-alt mr-2"></i>Обновить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 pb-8">
+        
+        <!-- КПИ карточки -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            
+            {% with metrics_table.rows as rows %}
+            {% for row in rows %}
+                {% if row.label == "Выручка" %}
+                    {% with total=row.values|sum_values %}
+                    <div class="stat-card card-shadow green">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <p class="text-gray-500 text-sm font-medium mb-1">Выручка за год</p>
+                                <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ total|intspace_no_cents }} ₽</h3>
+                                <p class="text-xs text-gray-400">Общий доход компании</p>
+                            </div>
+                            <div class="icon-circle bg-green-100 text-green-600">
+                                <i class="fas fa-arrow-trend-up"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% elif row.label == "Себестоимость" %}
+                    {% with total=row.values|sum_values %}
+                    <div class="stat-card card-shadow orange">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <p class="text-gray-500 text-sm font-medium mb-1">Себестоимость за год</p>
+                                <h3 class="text-3xl font-bold text-gray-900 mb-1">{{ total|intspace_no_cents }} ₽</h3>
+                                <p class="text-xs text-gray-400">Все затраты компании</p>
+                            </div>
+                            <div class="icon-circle bg-orange-100 text-orange-600">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% elif row.label == "Прибыль" %}
+                    {% with total=row.values|sum_values %}
+                    <div class="stat-card card-shadow {% if total >= 0 %}blue{% else %}red{% endif %}">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <p class="text-gray-500 text-sm font-medium mb-1">Прибыль за год</p>
+                                <h3 class="text-3xl font-bold {% if total >= 0 %}text-blue-600{% else %}text-red-600{% endif %} mb-1">
+                                    {{ total|intspace_no_cents }} ₽
+                                </h3>
+                                <p class="text-xs text-gray-400">Выручка минус расходы</p>
+                            </div>
+                            <div class="icon-circle {% if total >= 0 %}bg-blue-100 text-blue-600{% else %}bg-red-100 text-red-600{% endif %}">
+                                <i class="fas {% if total >= 0 %}fa-thumbs-up{% else %}fa-thumbs-down{% endif %}"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% elif row.label == "Прибыль %" %}
+                    {% with margin=row.values|avg_values %}
+                    <div class="stat-card card-shadow purple">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <p class="text-gray-500 text-sm font-medium mb-1">Маржинальность</p>
+                                <h3 class="text-3xl font-bold {% if margin >= 0 %}text-purple-600{% else %}text-red-600{% endif %} mb-1">
+                                    {{ margin|floatformat:0 }}%
+                                </h3>
+                                <p class="text-xs text-gray-400">Рентабельность бизнеса</p>
+                            </div>
+                            <div class="icon-circle bg-purple-100 text-purple-600">
+                                <i class="fas fa-percent"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+            {% endwith %}
+            
+        </div>
+
+        <!-- Графики -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            
+            <!-- График выручки и расходов -->
+            <div class="bg-white rounded-2xl p-6 card-shadow">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Динамика по месяцам</h3>
+                        <p class="text-sm text-gray-500">Выручка vs Себестоимость</p>
+                    </div>
+                    <div class="icon-circle bg-blue-100 text-blue-600">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueExpensesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- График прибыли -->
+            <div class="bg-white rounded-2xl p-6 card-shadow">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Динамика прибыли</h3>
+                        <p class="text-sm text-gray-500">Прибыль и маржа по месяцам</p>
+                    </div>
+                    <div class="icon-circle bg-green-100 text-green-600">
+                        <i class="fas fa-money-bill-trend-up"></i>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="profitChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Таблица метрик -->
+        <div class="bg-white rounded-2xl p-6 card-shadow mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Детальные метрики по месяцам</h3>
+                    <p class="text-sm text-gray-500">Все ключевые показатели за {{ year }} год</p>
+                </div>
+                <button onclick="window.print()" class="no-print bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all">
+                    <i class="fas fa-print mr-2"></i>Печать
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full table-modern">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-4 text-left rounded-tl-lg" style="min-width: 200px;">Показатель</th>
+                            {% for month in metrics_table.labels %}
+                                <th class="px-3 py-4 text-right" style="min-width: 100px; white-space: nowrap;">{{ month|month_name }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        {% for row in metrics_table.rows %}
+                            <tr class="border-b border-gray-100">
+                                <td class="px-6 py-4 font-semibold text-gray-900">
+                                    {% if row.label == "Выручка" %}
+                                        <i class="fas fa-arrow-trend-up text-green-500 mr-2"></i>
+                                    {% elif row.label == "Себестоимость" %}
+                                        <i class="fas fa-wallet text-orange-500 mr-2"></i>
+                                    {% elif row.label == "Прибыль" %}
+                                        <i class="fas fa-coins text-blue-500 mr-2"></i>
+                                    {% elif row.label == "Прибыль %" %}
+                                        <i class="fas fa-percent text-purple-500 mr-2"></i>
+                                    {% elif row.label == "Успешных сделок" %}
+                                        <i class="fas fa-handshake text-green-500 mr-2"></i>
+                                    {% elif row.label == "Лидов" %}
+                                        <i class="fas fa-users text-blue-500 mr-2"></i>
+                                    {% endif %}
+                                    {{ row.label }}
+                                </td>
+                                {% for value in row.values %}
+                                    <td class="px-3 py-4 text-right font-medium" style="white-space: nowrap; font-size: 0.875rem;">
+                                        {% if row.label == "Прибыль %" %}
+                                            <span class="{% if value >= 0 %}positive-value{% else %}negative-value{% endif %}">
+                                                {{ value|floatformat:0 }}%
+                                            </span>
+                                        {% elif row.label == "Лидов на сделку" %}
+                                            <span class="text-gray-700">{{ value|floatformat:2|comma_decimal }}</span>
+                                        {% elif row.label == "Прибыль" %}
+                                            <span class="{% if value >= 0 %}positive-value{% else %}negative-value{% endif %}">
+                                                {{ value|intspace_no_cents }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-gray-700">{{ value|intspace_no_cents }}</span>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Расходы по категориям -->
+        <div class="bg-white rounded-2xl p-6 card-shadow">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Расходы по категориям</h3>
+                    <p class="text-sm text-gray-500">Детальная разбивка затрат</p>
+                </div>
+                <div class="icon-circle bg-orange-100 text-orange-600">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full table-modern">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-4 text-left rounded-tl-lg" style="min-width: 200px;">Категория</th>
+                            {% for month in expenses_table.labels %}
+                                <th class="px-3 py-4 text-right" style="min-width: 100px; white-space: nowrap;">{{ month|month_name }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        {% for row in expenses_table.rows %}
+                            <tr class="border-b border-gray-100">
+                                <td class="px-6 py-4 font-medium text-gray-900">
+                                    <i class="fas fa-circle text-orange-400 mr-2" style="font-size: 8px;"></i>
+                                    {{ row.label|default:"(Без категории)" }}
+                                </td>
+                                {% for value in row.values %}
+                                    <td class="px-3 py-4 text-right font-medium text-gray-700" style="white-space: nowrap; font-size: 0.875rem;">
+                                        {{ value|intspace_no_cents }}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-white border-t border-gray-200 mt-12 py-6 no-print">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-500 text-sm">
+                <i class="fas fa-chart-pie text-purple-500 mr-2"></i>
+                Финансовый дашборд • Создано с использованием NLP-технологий
+                <i class="fas fa-brain text-purple-500 ml-2"></i>
+            </p>
+        </div>
+    </div>
+
+    <!-- JavaScript для графиков -->
+    <script>
+        // Данные из Django template
+        const monthNumbers = {{ metrics_table.labels|safe }};
+        const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
+                           'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+        const months = monthNumbers.map(num => monthNames[num - 1]);
+        
+        {% for row in metrics_table.rows %}
+            {% if row.label == "Выручка" %}
+                const revenueData = {{ row.values|safe }};
+            {% elif row.label == "Себестоимость" %}
+                const expensesData = {{ row.values|safe }};
+            {% elif row.label == "Прибыль" %}
+                const profitData = {{ row.values|safe }};
+            {% elif row.label == "Прибыль %" %}
+                const marginData = {{ row.values|safe }};
+            {% endif %}
+        {% endfor %}
+
+        // График 1: Выручка и Себестоимость
+        const ctx1 = document.getElementById('revenueExpensesChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Выручка',
+                        data: revenueData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    },
+                    {
+                        label: 'Себестоимость',
+                        data: expensesData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#f59e0b',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                size: 13,
+                                weight: '600'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + 
+                                       context.parsed.y.toLocaleString('ru-RU') + ' ₽';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return (value / 1000).toLocaleString('ru-RU') + ' тыс';
+                            },
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: { size: 11, weight: '500' }
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+
+        // График 2: Прибыль и Маржа
+        const ctx2 = document.getElementById('profitChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Прибыль (₽)',
+                        data: profitData,
+                        backgroundColor: profitData.map(v => v >= 0 ? 'rgba(59, 130, 246, 0.8)' : 'rgba(239, 68, 68, 0.8)'),
+                        borderColor: profitData.map(v => v >= 0 ? '#3b82f6' : '#ef4444'),
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Маржа (%)',
+                        data: marginData,
+                        type: 'line',
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#8b5cf6',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                size: 13,
+                                weight: '600'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.label.includes('%')) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(0) + '%';
+                                }
+                                return context.dataset.label + ': ' + 
+                                       context.parsed.y.toLocaleString('ru-RU') + ' ₽';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return (value / 1000).toLocaleString('ru-RU') + ' тыс';
+                            },
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(0) + '%';
+                            },
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: { size: 11, weight: '500' }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
