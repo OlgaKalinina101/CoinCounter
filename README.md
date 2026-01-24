@@ -620,7 +620,7 @@ WEBHOOK_TOKEN_2=your-leads-webhook-token
 
 ---
 
-### 5. OpenAI API (опционально)
+### 5. OpenAI API
 
 **Зачем:** Для AI-категоризации транзакций через embeddings
 
