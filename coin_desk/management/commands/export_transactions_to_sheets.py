@@ -30,7 +30,7 @@ class Command(BaseCommand):
             'https://www.googleapis.com/auth/drive'
         ]
         creds = ServiceAccountCredentials.from_json_keyfile_name(
-            settings.creds_path, 
+            settings.CREDS_PATH,
             scope
         )
         client = gspread.authorize(creds)
