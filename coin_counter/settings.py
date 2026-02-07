@@ -61,8 +61,8 @@ GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 if not GOOGLE_SHEET_ID:
     raise ValueError("GOOGLE_SHEET_ID must be set in .env file")
 
-creds_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS")
-if not creds_path:
+CREDS_PATH = os.getenv("GOOGLE_SHEETS_CREDENTIALS")
+if not CREDS_PATH:
     raise ValueError("GOOGLE_SHEETS_CREDENTIALS must be set in .env file")
 
 # Legacy alias - used in coin_desk.tasks for backward compatibility
