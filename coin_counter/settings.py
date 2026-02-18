@@ -257,7 +257,6 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 # Категории расходов, которые не учитываются в расчётах
 EXCLUDED_COST_CATEGORIES = [
     "Не учитывается",
-    "Выручка",
     "Перевод между своими счетами"
 ]
 
